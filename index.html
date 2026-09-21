@@ -2,51 +2,46 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#1a2332" />
 <title>Halco Job Notes</title>
 <style>
   :root { --bg:#121820; --card:#1c2533; --card2:#243044; --line:#334155; --text:#e8eef6; --muted:#93a4bb; --accent:#3d8bfd; --pad:16px; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 -apple-system,BlinkMacSystemFont,sans-serif; }
-  header { position:sticky; top:0; z-index:20; background:#1a2332f2; padding:calc(12px + env(safe-area-inset-top)) var(--pad) 12px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  header h1 { font-size:17px; margin:0; }
-  header .sub { color:var(--muted); font-size:12px; }
-  main { padding:var(--pad); padding-bottom:calc(150px + env(safe-area-inset-bottom)); max-width:720px; margin:0 auto; }
+  html,body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 -apple-system,sans-serif; }
+  header { position:sticky; top:0; z-index:20; background:#1a2332; padding:calc(12px + env(safe-area-inset-top)) 16px 12px; display:flex; justify-content:space-between; align-items:center; }
+  h1 { font-size:17px; margin:0; }
+  .sub { color:var(--muted); font-size:12px; }
+  main { padding:16px; padding-bottom:140px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
-  .row { display:flex; gap:10px; flex-wrap:wrap; }
-  .row.stack { flex-direction:column; }
+  .row.stack { display:flex; flex-direction:column; gap:10px; }
+  .row { display:flex; gap:8px; }
   button { appearance:none; border:0; border-radius:12px; padding:14px; min-height:48px; background:var(--accent); color:#fff; font-weight:700; font-size:16px; }
   button.ghost { background:var(--card2); color:var(--text); border:1px solid var(--line); }
   button.good { background:#1f8a55; }
   label { display:block; font-size:13px; color:var(--muted); margin:12px 0 6px; }
-  input,select,textarea { width:100%; background:#0f1620; color:var(--text); border:1px solid var(--line); border-radius:12px; padding:14px; font:inherit; font-size:16px; }
+  input,select,textarea { width:100%; background:#0f1620; color:var(--text); border:1px solid var(--line); border-radius:12px; padding:14px; font:inherit; }
   textarea { min-height:110px; }
   .choice { width:100%; text-align:left; }
-  .choice.on { background:#1d4a86; color:#fff; }
-  .preview { white-space:pre-wrap; background:#0c121a; border-radius:12px; padding:14px; font-family:ui-monospace,Menlo,monospace; font-size:14px; word-break:break-word; }
+  .choice.on { background:#1d4a86; }
+  .preview { white-space:pre-wrap; background:#0c121a; border-radius:12px; padding:14px; font-family:ui-monospace,Menlo,monospace; font-size:14px; }
   .photos { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .photos img { width:100%; height:120px; object-fit:cover; border-radius:10px; }
-  .copybox { background:#0c121a; border:1px dashed var(--line); border-radius:8px; padding:12px; margin:6px 0; font-family:ui-monospace,Menlo,monospace; }
+  .copybox { background:#0c121a; border:1px dashed var(--line); border-radius:8px; padding:12px; margin:6px 0; }
   .tabs { display:flex; gap:6px; margin-bottom:12px; }
-  .tabs button { flex:1; padding:12px 6px; font-size:13px; }
+  .tabs button { flex:1; font-size:13px; }
   .hidden { display:none !important; }
-  .chat { display:flex; flex-direction:column; gap:8px; max-height:220px; overflow:auto; }
-  .bubble { padding:10px 12px; border-radius:12px; background:var(--card2); }
+  .chat { max-height:220px; overflow:auto; }
+  .bubble { padding:10px; border-radius:12px; background:var(--card2); margin:6px 0; }
   .bubble.me { background:#1d4a86; }
-  .dock { position:fixed; left:0; right:0; bottom:0; z-index:30; background:#152033f2; border-top:1px solid var(--line); padding:10px var(--pad) calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
+  .dock { position:fixed; left:0; right:0; bottom:0; background:#152033; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
   .dock button { flex:1; }
-  .toast { position:fixed; bottom:calc(88px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; z-index:50; }
+  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; }
 </style>
 </head>
 <body>
 <header>
-  <div>
-    <h1>Halco Job Notes</h1>
-    <div class="sub" id="jsFlag">Loading…</div>
-  </div>
+  <div><h1>Halco Job Notes</h1><div class="sub" id="jsFlag">Ready — tap Service or Maintenance</div></div>
   <button class="ghost" id="resetBtn" type="button">New job</button>
 </header>
 <main>
@@ -73,47 +68,43 @@
     </div>
     <div class="card">
       <label>Date</label><input id="jobDate" type="date" />
-      <label>Customer last name</label><input id="lastName" placeholder="From invoice photo" />
-      <label>Invoice #</label><input id="invoice" placeholder="From invoice photo" />
+      <label>Customer last name</label><input id="lastName" />
+      <label>Invoice #</label><input id="invoice" />
       <label>System / template</label><select id="systemSel"></select>
-      <label>Equipment</label><input id="equipment" placeholder="Brand / model / location" />
+      <label>Equipment</label><input id="equipment" />
     </div>
     <div class="card">
-      <label>Fill-ins (anything in parentheses)</label>
-      <div id="fillFields"></div>
-      <label>Extra job information</label>
-      <textarea id="extraNotes" placeholder="Findings, readings, parts, customer talk"></textarea>
-      <label>Photos</label>
-      <input id="photoInput" type="file" accept="image/*" multiple />
+      <label>Fill-ins ( )</label><div id="fillFields"></div>
+      <label>Extra job information</label><textarea id="extraNotes"></textarea>
+      <label>Photos</label><input id="photoInput" type="file" accept="image/*" multiple />
       <div class="photos" id="photoGrid"></div>
     </div>
-    <div class="card"><div class="preview" id="preview">Pick Service or Maintenance, then Build.</div></div>
+    <div class="card"><div class="preview" id="preview">Pick a type, then Build.</div></div>
   </section>
   <section id="paneEquip" class="hidden">
     <div class="card">
-      <p>Copy equipment — tap a block to copy.</p>
       <label>Brand</label><input id="eqBrand" />
       <label>Model</label><input id="eqModel" />
       <label>Serial</label><input id="eqSerial" />
       <label>Extra IDs</label><textarea id="eqExtra"></textarea>
-      <button type="button" id="eqApply">Push into Equipment field</button>
+      <button type="button" id="eqApply">Push into Equipment</button>
       <div id="copyBlocks"></div>
     </div>
   </section>
   <section id="paneChat" class="hidden">
     <div class="card">
       <div class="chat" id="chatLog"></div>
-      <textarea id="chatIn" placeholder="Ask helper"></textarea>
+      <textarea id="chatIn"></textarea>
       <div class="row">
         <button type="button" id="chatSend">Ask helper</button>
         <button class="ghost" type="button" id="packPrompt">Copy Grok prompt</button>
       </div>
-      <input id="apiKey" type="password" placeholder="optional xai key" />
+      <input id="apiKey" type="password" />
     </div>
   </section>
   <section id="paneLib" class="hidden">
     <div class="card">
-      <textarea id="libEdit" style="min-height:280px"></textarea>
+      <textarea id="libEdit" style="min-height:240px"></textarea>
       <div class="row">
         <button type="button" id="libSave">Save library</button>
         <button class="ghost" type="button" id="libReset">Restore defaults</button>
@@ -127,7 +118,6 @@
   <button class="ghost" type="button" id="mailBtn">Email</button>
 </div>
 <div class="toast" id="toast">Copied</div>
-<script src="https://cdn.jsdelivr.net/gh/jakewinterkorn-cell/halco-notes@main/templates.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/jakewinterkorn-cell/halco-notes@main/app.js"></script>
-</body>
-</html>
+<script src="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/templates.js"></script>
+<script src="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/app.js"></script>
+</body></html>
