@@ -12,7 +12,7 @@
   header { position:sticky; top:0; z-index:20; background:#1a2332; padding:calc(12px + env(safe-area-inset-top)) 16px 12px; display:flex; justify-content:space-between; align-items:center; }
   h1 { font-size:17px; margin:0; }
   .sub { color:var(--muted); font-size:12px; }
-  main { padding:16px; padding-bottom:140px; }
+  main { padding:16px; padding-bottom:160px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
   .row.stack { display:flex; flex-direction:column; gap:10px; }
   .row { display:flex; gap:8px; flex-wrap:wrap; }
@@ -30,9 +30,10 @@
   .tabs { display:flex; gap:6px; margin-bottom:12px; }
   .tabs button { flex:1; font-size:13px; }
   .hidden { display:none !important; }
-  .dock { position:fixed; left:0; right:0; bottom:0; background:#152033; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
-  .dock button { flex:1; }
-  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; z-index:50; }
+  .dock { position:fixed; left:0; right:0; bottom:0; background:#152033; padding:10px 8px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:6px; flex-wrap:wrap; }
+  .dock button { flex:1; min-width:22%; font-size:13px; padding:12px 6px; }
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; z-index:50; }
+  .stock-grid { display:flex; flex-direction:column; gap:8px; }
 </style>
 </head>
 <body>
@@ -74,6 +75,15 @@
       <div class="photos" id="photoGrid"></div>
     </div>
     <div class="card"><div class="preview" id="preview">Pick a type, then Build.</div></div>
+    <div class="card hidden" id="stockCard">
+      <p class="sub" style="margin-top:0" id="stockHeader">Truck stock uses last name and invoice from above.</p>
+      <label>Send pickup email to (saved on this phone)</label>
+      <input id="stockEmail" type="email" placeholder="you@email.com" />
+      <div class="stock-grid" id="stockBoxes"></div>
+      <div class="row" style="margin-top:12px">
+        <button type="button" id="stockAdd">Add / email pickup</button>
+      </div>
+    </div>
   </section>
   <section id="paneLib" class="hidden">
     <div class="card">
@@ -89,6 +99,7 @@
   <button type="button" id="buildBtn">Build</button>
   <button class="good" type="button" id="copyNotesBtn">Copy</button>
   <button class="ghost" type="button" id="mailBtn">Email</button>
+  <button class="ghost" type="button" id="stockBtn">Truck Stock</button>
 </div>
 <div class="toast" id="toast">Copied</div>
 <script src="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/templates.js"></script>
