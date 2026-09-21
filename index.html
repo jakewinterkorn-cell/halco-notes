@@ -30,9 +30,6 @@
   .tabs { display:flex; gap:6px; margin-bottom:12px; }
   .tabs button { flex:1; font-size:13px; }
   .hidden { display:none !important; }
-  .chat { max-height:220px; overflow:auto; }
-  .bubble { padding:10px; border-radius:12px; background:var(--card2); margin:6px 0; }
-  .bubble.me { background:#1d4a86; }
   .dock { position:fixed; left:0; right:0; bottom:0; background:#152033; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
   .dock button { flex:1; }
   .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; z-index:50; }
@@ -46,7 +43,6 @@
 <main>
   <div class="tabs">
     <button id="tabJob" type="button">Job</button>
-    <button class="ghost" id="tabChat" type="button">Grok</button>
     <button class="ghost" id="tabLib" type="button">Library</button>
   </div>
   <section id="paneJob">
@@ -69,28 +65,15 @@
       <label>Customer last name</label><input id="lastName" />
       <label>Invoice #</label><input id="invoice" />
       <label>System / template</label><select id="systemSel"></select>
-      <label>Equipment</label><input id="equipment" placeholder="Paste model from Grok if you want it on the invoice" />
+      <label>Equipment</label><input id="equipment" />
     </div>
     <div class="card">
       <label>Fill-ins ( )</label><div id="fillFields"></div>
       <label>Extra job information</label><textarea id="extraNotes"></textarea>
-      <label>Job photos (not nameplates)</label><input id="photoInput" type="file" accept="image/*" multiple />
+      <label>Job photos</label><input id="photoInput" type="file" accept="image/*" multiple />
       <div class="photos" id="photoGrid"></div>
-      <p class="sub">Nameplate photos go in the Grok chat. I send back Model and Serial as separate copy lines for Service Titan.</p>
     </div>
     <div class="card"><div class="preview" id="preview">Pick a type, then Build.</div></div>
-  </section>
-  <section id="paneChat" class="hidden">
-    <div class="card">
-      <p class="sub" style="margin-top:0">On-phone helper only. For nameplate IDs, send the picture in the Grok chat.</p>
-      <div class="chat" id="chatLog"></div>
-      <textarea id="chatIn"></textarea>
-      <div class="row">
-        <button type="button" id="chatSend">Ask helper</button>
-        <button class="ghost" type="button" id="packPrompt">Copy Grok prompt</button>
-      </div>
-      <input id="apiKey" type="password" />
-    </div>
   </section>
   <section id="paneLib" class="hidden">
     <div class="card">
