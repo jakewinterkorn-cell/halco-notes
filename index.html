@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <title>Halco Job Notes</title>
 <style>
-  :root { --bg:#121820; --card:#1c2533; --card2:#243044; --line:#334155; --text:#e8eef6; --muted:#93a4bb; --accent:#3d8bfd; --pad:16px; }
+  :root { --bg:#121820; --card:#1c2533; --card2:#243044; --line:#334155; --text:#e8eef6; --muted:#93a4bb; --accent:#3d8bfd; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 -apple-system,sans-serif; }
   header { position:sticky; top:0; z-index:20; background:#1a2332; padding:calc(12px + env(safe-area-inset-top)) 16px 12px; display:flex; justify-content:space-between; align-items:center; }
@@ -15,19 +15,19 @@
   main { padding:16px; padding-bottom:140px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:14px; }
   .row.stack { display:flex; flex-direction:column; gap:10px; }
-  .row { display:flex; gap:8px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
   button { appearance:none; border:0; border-radius:12px; padding:14px; min-height:48px; background:var(--accent); color:#fff; font-weight:700; font-size:16px; }
   button.ghost { background:var(--card2); color:var(--text); border:1px solid var(--line); }
   button.good { background:#1f8a55; }
+  button.copybtn { width:100%; text-align:left; background:#0c121a; color:#fff; border:1px dashed var(--accent); font-family:ui-monospace,Menlo,monospace; font-size:15px; word-break:break-all; }
   label { display:block; font-size:13px; color:var(--muted); margin:12px 0 6px; }
   input,select,textarea { width:100%; background:#0f1620; color:var(--text); border:1px solid var(--line); border-radius:12px; padding:14px; font:inherit; }
-  textarea { min-height:110px; }
+  textarea { min-height:90px; }
   .choice { width:100%; text-align:left; }
   .choice.on { background:#1d4a86; }
   .preview { white-space:pre-wrap; background:#0c121a; border-radius:12px; padding:14px; font-family:ui-monospace,Menlo,monospace; font-size:14px; }
-  .photos { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .photos { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
   .photos img { width:100%; height:120px; object-fit:cover; border-radius:10px; }
-  .copybox { background:#0c121a; border:1px dashed var(--line); border-radius:8px; padding:12px; margin:6px 0; }
   .tabs { display:flex; gap:6px; margin-bottom:12px; }
   .tabs button { flex:1; font-size:13px; }
   .hidden { display:none !important; }
@@ -36,12 +36,12 @@
   .bubble.me { background:#1d4a86; }
   .dock { position:fixed; left:0; right:0; bottom:0; background:#152033; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:8px; }
   .dock button { flex:1; }
-  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; }
+  .toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; z-index:50; }
 </style>
 </head>
 <body>
 <header>
-  <div><h1>Halco Job Notes</h1><div class="sub" id="jsFlag">Ready — tap Service or Maintenance</div></div>
+  <div><h1>Halco Job Notes</h1><div class="sub" id="jsFlag">Ready</div></div>
   <button class="ghost" id="resetBtn" type="button">New job</button>
 </header>
 <main>
@@ -76,18 +76,30 @@
     <div class="card">
       <label>Fill-ins ( )</label><div id="fillFields"></div>
       <label>Extra job information</label><textarea id="extraNotes"></textarea>
-      <label>Photos</label><input id="photoInput" type="file" accept="image/*" multiple />
+      <label>Job photos</label><input id="photoInput" type="file" accept="image/*" multiple />
       <div class="photos" id="photoGrid"></div>
     </div>
     <div class="card"><div class="preview" id="preview">Pick a type, then Build.</div></div>
   </section>
   <section id="paneEquip" class="hidden">
     <div class="card">
+      <p class="sub" style="margin-top:0">Nameplate photos stay on this tab. Model and serial each get their own copy button.</p>
+      <label>Nameplate photos</label>
+      <input id="eqPhotoInput" type="file" accept="image/*" multiple />
+      <div class="photos" id="eqPhotoGrid"></div>
+      <label>Paste or type plate text (iPhone Live Text works)</label>
+      <textarea id="eqPlateText" placeholder="MODEL GSX130181EJ&#10;SERIAL 2104123456"></textarea>
+      <button type="button" id="eqParse">Split into Model + Serial</button>
+    </div>
+    <div class="card">
       <label>Brand</label><input id="eqBrand" />
       <label>Model</label><input id="eqModel" />
       <label>Serial</label><input id="eqSerial" />
       <label>Extra IDs</label><textarea id="eqExtra"></textarea>
-      <button type="button" id="eqApply">Push into Equipment</button>
+      <div class="row">
+        <button type="button" id="eqMakeCopy">Make copy buttons</button>
+        <button class="ghost" type="button" id="eqApply">Push into Equipment</button>
+      </div>
       <div id="copyBlocks"></div>
     </div>
   </section>
