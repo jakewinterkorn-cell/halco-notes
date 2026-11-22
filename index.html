@@ -34,6 +34,9 @@
   .dock button { flex:1; min-width:22%; font-size:13px; padding:12px 6px; }
   .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:#0b0; color:#042; padding:8px 14px; border-radius:999px; display:none; z-index:50; }
   .stock-grid { display:flex; flex-direction:column; gap:8px; }
+  .bot-list { margin:0; padding-left:18px; }
+  .bot-list li { margin:8px 0; }
+  a { color:#8eb7ff; }
 </style>
 </head>
 <body>
@@ -45,6 +48,7 @@
   <div class="tabs">
     <button id="tabJob" type="button">Job</button>
     <button class="ghost" id="tabLib" type="button">Library</button>
+    <button class="ghost" id="tabBot" type="button">Bot</button>
   </div>
   <section id="paneJob">
     <div class="card">
@@ -97,6 +101,25 @@
       </div>
     </div>
   </section>
+  <section id="paneBot" class="hidden">
+    <div class="card">
+      <h2 style="margin:0 0 6px;font-size:18px">Halco Invoices</h2>
+      <p class="sub" style="margin:0 0 12px">Drafts the note, waits for your okay, then saves to Google Drive. Parts email is draft-only until you say send.</p>
+      <ol class="bot-list">
+        <li>Draft from photos, last name, invoice, equipment, and readings.</li>
+        <li>Use the same templates as this app. Leave blank fill-ins out. Do not invent numbers.</li>
+        <li>Show the note. Save to Drive folder Halco Invoices only after approval.</li>
+        <li>Parts email: To jacob@halcoenergy.com. Subject is Last - invoice. Body is part lines only. Do not send until told.</li>
+        <li>Do not handle inbox replies. Truck Stock in this app is a different email.</li>
+      </ol>
+      <p class="sub">This phone keeps the open job. The bot cannot see it unless you paste the note or send screenshots.</p>
+      <div class="row stack">
+        <button type="button" id="copyBotBrief">Copy bot brief</button>
+        <a href="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/index.html" target="_blank" rel="noopener"><button class="ghost" type="button">Open app link</button></a>
+        <a href="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/templates.js" target="_blank" rel="noopener"><button class="ghost" type="button">Open templates</button></a>
+      </div>
+    </div>
+  </section>
 </main>
 <div class="dock">
   <button type="button" id="buildBtn">Build</button>
@@ -105,6 +128,6 @@
   <button class="ghost" type="button" id="stockBtn">Truck Stock</button>
 </div>
 <div class="toast" id="toast">Copied</div>
-<script src="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/templates.js?v=20260923"></script>
-<script src="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/app.js?v=20260923"></script>
+<script src="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/templates.js?v=20261122"></script>
+<script src="https://raw.githack.com/jakewinterkorn-cell/halco-notes/main/app.js?v=20261122"></script>
 </body></html>
