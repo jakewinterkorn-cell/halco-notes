@@ -1,4 +1,4 @@
-/* Halco Job Notes — live Grok panel at the top, with photo attach.
+/* Halco Job Notes — live Grok panel at the top, with photo attach and field fill.
    Auth: window.HALCO_GROK_PROXY or localStorage["halco-xai-key"]
 */
 (function () {
@@ -9,7 +9,16 @@
   var API = window.HALCO_GROK_PROXY || "https://api.x.ai/v1/chat/completions";
   var SYSTEM =
     window.HALCO_GROK_SYSTEM ||
-    "You are Grok inside Halco Job Notes, a phone app Jacob W uses in the field for Halco Energy job invoice notes. Voice: short field-tech English. No fluff. Do not invent readings, part numbers, or findings. Read any attached photos (nameplates, Service Titan screens, equipment). Note format starts with 'Job Invoice Summary - {date}' then '{Last} - {Invoice}', then job type, equipment, body, then 'Thank you,' / 'Jacob W'. If you draft a full note, put it in a markdown fence labeled halco-note.";
+    [
+      "You are Grok inside Halco Job Notes, a phone app Jacob W uses in the field for Halco Energy job invoice notes.",
+      "Voice: short field-tech English. No fluff. Do not invent readings, part numbers, findings, last names, or invoice numbers.",
+      "When the user sends text or photos, extract only what is clearly present and transfer it into the app by returning a markdown fence labeled halco-fields containing one JSON object.",
+      "Allowed keys: jobType (service|maintenance), kind (Maintenance|Prepaid Maintenance), systemId, jobDate (YYYY-MM-DD), lastName, invoice, equipment, extraNotes, svcFor, svcFindings, svcRecs, svcFix, fills (object), stock (array of item strings).",
+      "systemId must be one of: gas-furnace, coil-condenser, coil-hp, air-handler-hp, ductless, he-boiler, gas-boiler, combi, wh-gas, wh-elec, tankless, hpwh, humidifier, sanidry, erv, service-blank.",
+      "fills keys: filter, hsi, rise, supplyCO, exhCO, o2, co2, stack, cap, delta, baseCO, volts, upper, lower, temp.",
+      "Put free-text job notes that belong in the email into extraNotes. Put service call details into svcFor / svcFindings / svcRecs / svcFix. Put truck-stock part lines into stock.",
+      "Omit any key you cannot fill. Do not guess. After the fence, one short sentence on what you filled. If you also draft a full note, put that in a fence labeled halco-note."
+    ].join(" ");
 
   var history = [];
   var pendingPhotos = [];
@@ -37,6 +46,7 @@
       sysName = sysSel.options[sysSel.selectedIndex].textContent;
     }
     var st = window.state || {};
+    var systems = (st.lib && st.lib.systems) || [];
     return {
       jobType: st.jobType || null,
       kind: st.kind || "Maintenance",
@@ -45,6 +55,7 @@
       invoice: val("invoice"),
       systemId: sysSel ? sysSel.value : "",
       systemName: sysName,
+      systems: systems.map(function (s) { return { id: s.id, name: s.name }; }),
       equipment: val("equipment"),
       fills: fills,
       extraNotes: val("extraNotes"),
@@ -59,6 +70,27 @@
   function extractNote(text) {
     var m = text.match(/```halco-note\s*([\s\S]*?)```/i);
     return m ? m[1].trim() : null;
+  }
+  function extractFields(text) {
+    var m = text.match(/```halco-fields\s*([\s\S]*?)```/i);
+    if (!m) return null;
+    try { return JSON.parse(m[1].trim()); } catch (e) { return null; }
+  }
+  function stripFences(text) {
+    return text
+      .replace(/```halco-fields\s*[\s\S]*?```/gi, "")
+      .replace(/```halco-note\s*[\s\S]*?```/gi, "")
+      .trim();
+  }
+  function filledKeys(fields) {
+    if (!fields) return [];
+    return Object.keys(fields).filter(function (k) {
+      var v = fields[k];
+      if (v == null || v === "") return false;
+      if (Array.isArray(v) && !v.length) return false;
+      if (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length) return false;
+      return true;
+    });
   }
 
   function key() {
@@ -122,13 +154,13 @@
       '<span><button class="ghost" type="button" id="grokKeyBtn">Key</button> ' +
       '<button class="ghost" type="button" id="grokToggle">Open</button></span></div>' +
       '<div id="grokBody">' +
-      '<div id="grokLog">Add photos or type what to draft. Key is stored only on this phone.</div>' +
+      '<div id="grokLog">Send text or photos. Matching fields below get filled and the note rebuilds. Key is stored only on this phone.</div>' +
       '<div id="grokPhotos"></div>' +
-      '<button type="button" id="grokApply">Apply to notes</button>' +
+      '<button type="button" id="grokApply">Apply full note</button>' +
       '<div id="grokRow">' +
       '<input id="grokPhotoIn" type="file" accept="image/*" multiple hidden />' +
       '<button class="ghost" type="button" id="grokPhotoBtn">Photo</button>' +
-      '<textarea id="grokIn" placeholder="Ask the bot\u2026"></textarea>' +
+      '<textarea id="grokIn" placeholder="Last name, invoice, readings, or a photo\u2026"></textarea>' +
       '<button type="button" id="grokSend">Send</button></div></div>';
     var tabs = main.querySelector(".tabs");
     if (tabs) main.insertBefore(panel, tabs);
@@ -178,7 +210,7 @@
     if (!photos.length) return text;
     var parts = [];
     if (text) parts.push({ type: "text", text: text });
-    else parts.push({ type: "text", text: "Read these photos and draft the Halco job note." });
+    else parts.push({ type: "text", text: "Read these photos and fill the matching Halco job fields." });
     photos.forEach(function (p) {
       parts.push({ type: "image_url", image_url: { url: p.data } });
     });
@@ -197,6 +229,7 @@
     var photos = pendingPhotos.slice();
     pendingPhotos = [];
     drawPhotos();
+    if (photos.length && typeof window.halcoAddJobPhotos === "function") window.halcoAddJobPhotos(photos);
     appendLog("You", (text || "(photos only)") + (photos.length ? " [" + photos.length + " photo]" : ""));
     var snap = snapshot();
     history.push({ role: "user", content: userContent(text, photos) });
@@ -225,7 +258,15 @@
         data.output_text ||
         JSON.stringify(data);
       history.push({ role: "assistant", content: out });
-      appendLog("Grok", out);
+      var fields = extractFields(out);
+      var keys = filledKeys(fields);
+      if (fields && typeof window.halcoApplyFields === "function") {
+        window.halcoApplyFields(fields);
+        toast(keys.length ? "Filled: " + keys.join(", ") : "Nothing to fill");
+      }
+      var visible = stripFences(out);
+      if (keys.length) visible = (visible ? visible + "\n" : "") + "Filled: " + keys.join(", ");
+      appendLog("Grok", visible || "(no reply text)");
       var note = extractNote(out);
       if (note) {
         apply.dataset.note = note;
