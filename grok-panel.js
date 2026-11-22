@@ -102,14 +102,13 @@
     var s = document.createElement("style");
     s.textContent =
       "#grokTop{background:#1c2533;border:1px solid #334155;border-radius:16px;padding:12px;margin:0 0 14px}" +
-      "#grokTopHead{display:flex;justify-content:space-between;align-items:center;gap:8px}" +
+      "#grokTopHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}" +
       "#grokTopHead strong{font-size:16px}" +
-      "#grokBody{display:none;margin-top:10px}" +
-      "#grokTop.on #grokBody{display:block}" +
-      "#grokLog{max-height:220px;overflow:auto;background:#0f1620;border:1px solid #334155;border-radius:12px;padding:10px;white-space:pre-wrap;font-size:14px}" +
+      "#grokBody{display:block}" +
+      "#grokLog{max-height:160px;overflow:auto;background:#0f1620;border:1px solid #334155;border-radius:12px;padding:10px;white-space:pre-wrap;font-size:14px;margin-top:8px}" +
       "#grokPhotos{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}" +
       "#grokPhotos img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #334155}" +
-      "#grokRow{display:flex;gap:8px;margin-top:8px;align-items:flex-end}" +
+      "#grokRow{display:flex;gap:8px;align-items:flex-end}" +
       "#grokIn{flex:1;min-height:48px;border-radius:12px;border:1px solid #334155;background:#0f1620;color:#e8eef6;padding:12px;font:inherit}" +
       "#grokTop button{appearance:none;border:0;border-radius:12px;padding:12px;min-height:48px;background:#3d8bfd;color:#fff;font-weight:700}" +
       "#grokTop button.ghost{background:#243044;color:#e8eef6;border:1px solid #334155}" +
@@ -152,25 +151,20 @@
     panel.id = "grokTop";
     panel.innerHTML =
       '<div id="grokTopHead"><strong>Live bot</strong>' +
-      '<span><button class="ghost" type="button" id="grokKeyBtn">Key</button> ' +
-      '<button class="ghost" type="button" id="grokToggle">Open</button></span></div>' +
+      '<button class="ghost" type="button" id="grokKeyBtn">Key</button></div>' +
       '<div id="grokBody">' +
-      '<div id="grokLog">Send text or photos. Matching fields below get filled and the note rebuilds. Key is stored only on this phone.</div>' +
-      '<div id="grokPhotos"></div>' +
-      '<button type="button" id="grokApply">Apply full note</button>' +
       '<div id="grokRow">' +
       '<input id="grokPhotoIn" type="file" accept="image/*" multiple hidden />' +
       '<button class="ghost" type="button" id="grokPhotoBtn">Photo</button>' +
-      '<textarea id="grokIn" placeholder="Last name, invoice, readings, or a photo\u2026"></textarea>' +
-      '<button type="button" id="grokSend">Send</button></div></div>';
+      '<textarea id="grokIn" placeholder="Add photos, then type the job…"></textarea>' +
+      '<button type="button" id="grokSend">Send</button></div>' +
+      '<div id="grokPhotos"></div>' +
+      '<div id="grokLog">Photos and text fill the job fields below.</div>' +
+      '<button type="button" id="grokApply">Apply full note</button></div>';
     var tabs = main.querySelector(".tabs");
     if (tabs) main.insertBefore(panel, tabs);
     else main.insertBefore(panel, main.firstChild);
 
-    $("grokToggle").onclick = function () {
-      var on = panel.classList.toggle("on");
-      this.textContent = on ? "Close" : "Open";
-    };
     $("grokKeyBtn").onclick = function () {
       var next = prompt("xAI API key for this phone (stored only on device)", key() || "");
       if (next === null) return;
