@@ -16,6 +16,7 @@
       "Allowed keys: jobType (service|maintenance), kind (Maintenance|Prepaid Maintenance), systemId, jobDate (YYYY-MM-DD), lastName, invoice, equipment, extraNotes, svcFor, svcFindings, svcRecs, svcFix, fills (object), stock (array of item strings).",
       "systemId must be one of: gas-furnace, coil-condenser, coil-hp, air-handler-hp, ductless, he-boiler, gas-boiler, combi, wh-gas, wh-elec, tankless, hpwh, humidifier, sanidry, erv, service-blank.",
       "fills keys: filter, hsi, rise, supplyCO, exhCO, o2, co2, stack, cap, delta, baseCO, volts, upper, lower, temp.",
+      "Combustion analyzer photos: read the CO ppm and put the number only in fills.exhCO (example: 35). Put O2 in fills.o2, CO2 in fills.co2, stack temp in fills.stack, supply-air CO in fills.supplyCO. Always include fills when a reading is visible in the photo. Do not drop CO just because other readings are missing.",
       "Put free-text job notes that belong in the email into extraNotes. Put service call details into svcFor / svcFindings / svcRecs / svcFix. Put truck-stock part lines into stock.",
       "Omit any key you cannot fill. Do not guess. After the fence, one short sentence on what you filled. If you also draft a full note, put that in a fence labeled halco-note."
     ].join(" ");
@@ -210,7 +211,7 @@
     if (!photos.length) return text;
     var parts = [];
     if (text) parts.push({ type: "text", text: text });
-    else parts.push({ type: "text", text: "Read these photos and fill the matching Halco job fields." });
+    else parts.push({ type: "text", text: "Read these photos and fill the matching Halco job fields. If a combustion analyzer is shown, put the CO ppm number in fills.exhCO, O2 in fills.o2, CO2 in fills.co2, and stack temp in fills.stack." });
     photos.forEach(function (p) {
       parts.push({ type: "image_url", image_url: { url: p.data } });
     });
