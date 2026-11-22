@@ -10,15 +10,18 @@
   var SYSTEM =
     window.HALCO_GROK_SYSTEM ||
     [
-      "You are Grok inside Halco Job Notes, a phone app Jacob W uses in the field for Halco Energy job invoice notes.",
-      "Voice: short field-tech English. No fluff. Do not invent readings, part numbers, findings, last names, or invoice numbers.",
-      "When the user sends text or photos, extract only what is clearly present and transfer it into the app by returning a markdown fence labeled halco-fields containing one JSON object.",
-      "Allowed keys: jobType (service|maintenance), kind (Maintenance|Prepaid Maintenance), systemId, jobDate (YYYY-MM-DD), lastName, invoice, equipment, extraNotes, svcFor, svcFindings, svcRecs, svcFix, fills (object), stock (array of item strings).",
-      "systemId must be one of: gas-furnace, coil-condenser, coil-hp, air-handler-hp, ductless, he-boiler, gas-boiler, combi, wh-gas, wh-elec, tankless, hpwh, humidifier, sanidry, erv, service-blank.",
+      "You are Grok inside Halco Job Notes. Use the same shorthand Jacob uses with the Halco Invoices bot. Do not invent readings or part numbers.",
+      "When the user types or sends photos, return a markdown fence labeled halco-fields with one JSON object of only the fields you can fill.",
+      "Allowed keys: jobType (service|maintenance), kind (Maintenance|Prepaid Maintenance), systemId, jobDate (YYYY-MM-DD), lastName, invoice, equipment, extraNotes, svcFor, svcFindings, svcRecs, svcFix, fills (object), stock (array).",
+      "systemId: gas-furnace, coil-condenser, coil-hp, air-handler-hp, ductless, he-boiler, gas-boiler, combi, wh-gas, wh-elec, tankless, hpwh, humidifier, sanidry, erv, service-blank.",
       "fills keys: filter, hsi, rise, supplyCO, exhCO, o2, co2, stack, cap, delta, baseCO, volts, upper, lower, temp.",
-      "Combustion analyzer photos: read the CO ppm and put the number only in fills.exhCO (example: 35). Put O2 in fills.o2, CO2 in fills.co2, stack temp in fills.stack, supply-air CO in fills.supplyCO. Always include fills when a reading is visible in the photo. Do not drop CO just because other readings are missing.",
-      "Put free-text job notes that belong in the email into extraNotes. Put service call details into svcFor / svcFindings / svcRecs / svcFix. Put truck-stock part lines into stock.",
-      "Omit any key you cannot fill. Do not guess. After the fence, one short sentence on what you filled. If you also draft a full note, put that in a fence labeled halco-note."
+      "Shorthand, same as invoices bot: Pm = Prepaid Maintenance, M = Maintenance, S = Service.",
+      "Filter codes go in fills.filter as the number plus ' air filter'. Example: typing 401 becomes fills.filter = '401 air filter'. Same for 201, 213, 216, 220, 225, 240, 410, 413, 416, and sizes like 16x25x1.",
+      "Combustion shorthand: O = O2 (fills.o2), C = CO2 (fills.co2), Co = CO ppm (fills.exhCO), S = stack temp (fills.stack). Example: 'O 6.7 C 7.8 Co 45 S 112' fills those four. Do not drop CO if the others are missing.",
+      "Analyzer photos: read CO ppm into fills.exhCO, O2 into fills.o2, CO2 into fills.co2, stack into fills.stack, supply-air CO into fills.supplyCO.",
+      "Equipment words: furnace -> gas-furnace, coil and condenser -> coil-condenser, heat pump coil -> coil-hp, air handler -> air-handler-hp, ductless -> ductless, high efficiency boiler -> he-boiler, gas boiler -> gas-boiler, combi or Navien -> combi, gas tank WH -> wh-gas, electric tank WH -> wh-elec, tankless -> tankless, heat pump water heater -> hpwh, humidifier -> humidifier, sanidry -> sanidry, ERV -> erv.",
+      "Last name and invoice from a Service Titan screenshot or 'Last - 123456' go into lastName and invoice.",
+      "After the fence, one short sentence on what you filled."
     ].join(" ");
 
   var history = [];
@@ -92,6 +95,69 @@
       if (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length) return false;
       return true;
     });
+  }
+
+  function parseShorthand(text) {
+    var fields = { fills: {} };
+    var t = String(text || "");
+    if (!t.trim()) return fields;
+    if (/\bpm\b/i.test(t) || /\bprepaid\b/i.test(t)) {
+      fields.jobType = "maintenance";
+      fields.kind = "Prepaid Maintenance";
+    } else if (/\bmaintenance\b/i.test(t) || /^m\b/i.test(t)) {
+      fields.jobType = "maintenance";
+      fields.kind = "Maintenance";
+    } else if (/\bservice\b/i.test(t) || /^s\b/i.test(t)) {
+      fields.jobType = "service";
+    }
+    var nameInv = t.match(/\b([A-Z][A-Za-z]+)\s*[-–]\s*(\d{4,})\b/);
+    if (nameInv) {
+      fields.lastName = nameInv[1];
+      fields.invoice = nameInv[2];
+    }
+    var filt = t.match(/\b(201|213|216|220|225|240|401|410|413|416)\b/);
+    if (filt) fields.fills.filter = filt[1] + " air filter";
+    var dim = t.match(/\b(\d{2})\s*[xX×]\s*(\d{2})\s*[xX×]\s*(\d)\b/);
+    if (dim) fields.fills.filter = dim[1] + "x" + dim[2] + "x" + dim[3] + " filter";
+    var o = t.match(/\bO\s+(\d+(?:\.\d+)?)/);
+    var c = t.match(/\bC\s+(\d+(?:\.\d+)?)/);
+    var co = t.match(/\bCo\s+(\d+(?:\.\d+)?)/i);
+    var stack = t.match(/\bS\s+(\d{2,4})\b/);
+    if (o) fields.fills.o2 = o[1];
+    if (c) fields.fills.co2 = c[1];
+    if (co) fields.fills.exhCO = co[1];
+    if (stack) fields.fills.stack = stack[1];
+    var rise = t.match(/\brise\s+(\d+(?:\.\d+)?)/i);
+    if (rise) fields.fills.rise = rise[1];
+    var map = [
+      [/navien|combi/i, "combi", "Combi boiler"],
+      [/tankless/i, "tankless", "Tankless water heater"],
+      [/high.?eff|he boiler/i, "he-boiler", "High efficiency boiler"],
+      [/gas boiler/i, "gas-boiler", "Gas boiler"],
+      [/air handler/i, "air-handler-hp", "Air handler + heat pump"],
+      [/ductless/i, "ductless", "Ductless + heat pump"],
+      [/coil.*heat pump|heat pump.*coil/i, "coil-hp", "Coil and heat pump"],
+      [/coil|condenser/i, "coil-condenser", "Coil and condenser"],
+      [/furnace/i, "gas-furnace", "Gas furnace"],
+      [/sanidry/i, "sanidry", "Sanidry"],
+      [/humidifier/i, "humidifier", "Humidifier"],
+      [/\berv\b/i, "erv", "ERV"],
+      [/heat pump water|hpwh/i, "hpwh", "Heat pump water heater"],
+      [/electric.*(tank|wh|water)/i, "wh-elec", "Electric tank water heater"],
+      [/gas.*(tank|wh|water heater)/i, "wh-gas", "Gas tank water heater"]
+    ];
+    for (var i = 0; i < map.length; i++) {
+      if (map[i][0].test(t)) {
+        fields.systemId = map[i][1];
+        fields.equipment = map[i][2];
+        if (!fields.jobType) {
+          fields.jobType = "maintenance";
+          fields.kind = fields.kind || "Prepaid Maintenance";
+        }
+        break;
+      }
+    }
+    return fields;
   }
 
   function key() {
@@ -226,6 +292,10 @@
     drawPhotos();
     if (photos.length && typeof window.halcoAddJobPhotos === "function") window.halcoAddJobPhotos(photos);
     appendLog("You", (text || "(photos only)") + (photos.length ? " [" + photos.length + " photo]" : ""));
+    var local = parseShorthand(text);
+    if (typeof window.halcoApplyFields === "function" && filledKeys(local).length) {
+      window.halcoApplyFields(local);
+    }
     var snap = snapshot();
     history.push({ role: "user", content: userContent(text, photos) });
     var messages = [
