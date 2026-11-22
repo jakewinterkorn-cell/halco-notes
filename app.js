@@ -30,5 +30,43 @@ function sendStockEmail(){updateStockHeader();var items=stockItems();if(!items.l
 function sendJobEmail(){var extra=val("extraNotes");if(!extra){alert("Extra job information is empty.");return;}location.href="mailto:?subject="+encodeURIComponent(jobTag())+"&body="+encodeURIComponent(extra);}
 function notesNow(){var t=getPreview().trim();if(!t||t.indexOf("Pick a type")===0)return buildNotes();return t;}
 function onTap(el,fn){if(!el)return;el.addEventListener("click",fn);}
+function applyFromBot(fields){
+  if(!fields||typeof fields!=="object")return;
+  if(fields.jobType==="service"||fields.jobType==="maintenance"){
+    state.jobType=fields.jobType;
+    document.querySelectorAll("[data-job]").forEach(function(b){b.classList.toggle("on",b.dataset.job===state.jobType);});
+    $("maintKindWrap").classList.toggle("hidden",state.jobType!=="maintenance");
+    if(state.jobType==="service")$("systemSel").value="service-blank";
+    renderFills();
+  }
+  if(fields.kind==="Maintenance"||fields.kind==="Prepaid Maintenance"){
+    state.kind=fields.kind;
+    document.querySelectorAll("[data-kind]").forEach(function(b){b.classList.toggle("on",b.dataset.kind===state.kind);});
+  }
+  if(fields.systemId&&state.jobType!=="service"){
+    var opt=document.querySelector("#systemSel option[value='"+fields.systemId+"']");
+    if(opt){$("systemSel").value=fields.systemId;renderFills();}
+  }
+  ["jobDate","lastName","invoice","equipment","extraNotes","svcFor","svcFindings","svcRecs","svcFix"].forEach(function(id){
+    if(fields[id]!=null&&$(id))$(id).value=String(fields[id]);
+  });
+  if(fields.fills&&typeof fields.fills==="object"){
+    document.querySelectorAll("[data-fill]").forEach(function(el){
+      if(fields.fills[el.dataset.fill]!=null)el.value=String(fields.fills[el.dataset.fill]);
+    });
+  }
+  if(Array.isArray(fields.stock)&&fields.stock.length){
+    showTab("job");
+    $("stockCard").classList.remove("hidden");
+    for(var i=0;i<10;i++){var el=$("stock"+(i+1));if(el&&fields.stock[i])el.value=String(fields.stock[i]);}
+  }
+  updateStockHeader();
+  if(state.jobType)buildNotes();
+}
+window.halcoApplyFields=applyFromBot;
+window.halcoAddJobPhotos=function(photos){
+  (photos||[]).forEach(function(p){if(p&&p.data)state.photos.push({name:p.name||"photo",data:p.data});});
+  drawPhotos();
+};
 function init(){if($("jsFlag"))$("jsFlag").textContent="Ready";loadLib();renderSystems();renderFills();renderStockBoxes();$("libEdit").value=JSON.stringify(state.lib,null,2);$("jobDate").value=new Date().toISOString().slice(0,10);$("stockEmail").value=localStorage.getItem("halco-stock-email")||STOCK_TO;["lastName","invoice"].forEach(function(id){$(id).addEventListener("input",updateStockHeader);});document.querySelectorAll("[data-job]").forEach(function(btn){onTap(btn,function(){state.jobType=btn.dataset.job;document.querySelectorAll("[data-job]").forEach(function(b){b.classList.toggle("on",b===btn);});$("maintKindWrap").classList.toggle("hidden",state.jobType!=="maintenance");if(state.jobType==="service")$("systemSel").value="service-blank";renderFills();});});document.querySelectorAll("[data-kind]").forEach(function(btn){onTap(btn,function(){state.kind=btn.dataset.kind;document.querySelectorAll("[data-kind]").forEach(function(b){b.classList.toggle("on",b===btn);});});});$("systemSel").onchange=renderFills;onTap($("buildBtn"),function(){buildNotes();toast("Built");});onTap($("copyNotesBtn"),function(){navigator.clipboard.writeText(notesNow());toast("Notes copied");});onTap($("mailBtn"),sendJobEmail);onTap($("stockBtn"),function(){showTab("job");$("stockCard").classList.remove("hidden");updateStockHeader();$("stockCard").scrollIntoView({behavior:"smooth"});});onTap($("stockAdd"),sendStockEmail);$("photoInput").onchange=function(e){addPhotos(e.target.files);};onTap($("resetBtn"),function(){if(!confirm("Clear this job?"))return;["lastName","invoice","equipment","extraNotes","svcFor","svcFindings","svcRecs","svcFix"].forEach(function(id){if($(id))$(id).value="";});for(var i=1;i<=10;i++){if($("stock"+i))$("stock"+i).value="";}setPreview("");state.photos=[];drawPhotos();updateStockHeader();});onTap($("tabJob"),function(){showTab("job");});onTap($("tabLib"),function(){showTab("lib");});onTap($("tabBot"),function(){showTab("bot");});onTap($("copyBotBrief"),function(){navigator.clipboard.writeText(BOT_BRIEF);toast("Bot brief copied");});$("libSave").onclick=function(){try{state.lib=JSON.parse($("libEdit").value);saveLib();renderSystems();renderFills();toast("Library saved");}catch(err){alert(err.message);}};$("libReset").onclick=function(){state.lib=structuredClone(DEFAULT_LIB);$("libEdit").value=JSON.stringify(state.lib,null,2);saveLib();renderSystems();renderFills();toast("Defaults restored");};}
 init();
