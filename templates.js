@@ -31,7 +31,10 @@ const DEFAULT_LIB = {
       extras: [
         "(Temperature rise: {rise})",
         "(Supply air CO: {supplyCO})",
-        "(Exhaust combustion: CO {exhCO}, O2 {o2}, CO2 {co2}, stack temp {stack})"
+        "(Exhaust CO: {exhCO})",
+        "(O2: {o2})",
+        "(CO2: {co2})",
+        "(Stack temp: {stack})"
       ]
     },
     {
@@ -115,7 +118,12 @@ const DEFAULT_LIB = {
       name: "High Efficiency Boiler",
       system: "Boiler",
       equipmentHint: "High efficiency boiler",
-      fills: [],
+      fills: [
+        { key: "exhCO", label: "Exhaust CO ppm", def: "" },
+        { key: "o2", label: "O2 %", def: "" },
+        { key: "co2", label: "CO2 %", def: "" },
+        { key: "stack", label: "Stack temp F", def: "" }
+      ],
       bullets: [
         "Visual Inspection: Inspected boiler exterior, jacket, and surrounding area for leaks, corrosion, damage, and proper clearance. Verified combustion air supply.",
         "Burner / Ignition: Inspected burner and confirmed proper flame characteristics. Cleaned flame sensor and ignition electrode.",
@@ -129,14 +137,24 @@ const DEFAULT_LIB = {
         "Electrical & Controls: Inspected wiring, connections, and control board.",
         "System Test: Ran full operational test in heating mode. Verified proper ignition, circulation, and temperature rise. Took combustion readings. Checked for CO around the heat exchanger, unit, and venting. Unit is operating properly at this time."
       ],
-      extras: []
+            extras: [
+        "(Exhaust CO: {exhCO})",
+        "(O2: {o2})",
+        "(CO2: {co2})",
+        "(Stack temp: {stack})"
+      ]
     },
     {
       id: "gas-boiler",
       name: "Gas Boiler",
       system: "Boiler",
       equipmentHint: "Gas boiler",
-      fills: [],
+      fills: [
+        { key: "exhCO", label: "Exhaust CO ppm", def: "" },
+        { key: "o2", label: "O2 %", def: "" },
+        { key: "co2", label: "CO2 %", def: "" },
+        { key: "stack", label: "Stack temp F", def: "" }
+      ],
       bullets: [
         "Visual Inspection: Inspected boiler exterior, jacket, and surrounding area for leaks, corrosion, damage, and proper clearance. Verified combustion air supply.",
         "Burner Assembly: Inspected burner and confirmed proper flame characteristics.",
@@ -149,14 +167,24 @@ const DEFAULT_LIB = {
         "Electrical & Controls: Inspected wiring, transformer, and control board.",
         "System Test: Ran full operational test in heating mode. Verified proper ignition, circulation, and temperature rise. Took combustion readings. Unit is operating properly at this time."
       ],
-      extras: []
+            extras: [
+        "(Exhaust CO: {exhCO})",
+        "(O2: {o2})",
+        "(CO2: {co2})",
+        "(Stack temp: {stack})"
+      ]
     },
     {
       id: "combi",
       name: "Combi Boiler",
       system: "Boiler",
       equipmentHint: "Combi boiler",
-      fills: [],
+      fills: [
+        { key: "exhCO", label: "Exhaust CO ppm", def: "" },
+        { key: "o2", label: "O2 %", def: "" },
+        { key: "co2", label: "CO2 %", def: "" },
+        { key: "stack", label: "Stack temp F", def: "" }
+      ],
       bullets: [
         "Visual Inspection: Inspected exterior for leaks, corrosion, and proper clearances. Inspected surrounding area.",
         "Inlet Water Filter: Removed and cleaned filter casing. Inspected and cleaned inlet water filter.",
@@ -171,7 +199,12 @@ const DEFAULT_LIB = {
         "Safety Devices: Inspected pressure relief valves.",
         "System Test: Ran full operational test in heating mode. Verified supply and return heat. Tested domestic hot water operation. Took combustion readings. Checked for CO around the heat exchanger, unit, and venting. Unit is operating properly at this time."
       ],
-      extras: []
+            extras: [
+        "(Exhaust CO: {exhCO})",
+        "(O2: {o2})",
+        "(CO2: {co2})",
+        "(Stack temp: {stack})"
+      ]
     },
     {
       id: "wh-gas",
@@ -234,7 +267,12 @@ const DEFAULT_LIB = {
       name: "Tankless Water Heater",
       system: "Other",
       equipmentHint: "Tankless water heater",
-      fills: [],
+      fills: [
+        { key: "exhCO", label: "Exhaust CO ppm", def: "" },
+        { key: "o2", label: "O2 %", def: "" },
+        { key: "co2", label: "CO2 %", def: "" },
+        { key: "stack", label: "Stack temp F", def: "" }
+      ],
       bullets: [
         "Visual Inspection: Inspected exterior for leaks, corrosion, and proper clearances. Inspected surrounding area.",
         "Inlet Water Filter: Removed and cleaned filter casing. Inspected and cleaned inlet water filter.",
@@ -248,7 +286,12 @@ const DEFAULT_LIB = {
         "Safety Devices: Inspected pressure relief valve.",
         "System Test: Ran full operational test. Tested domestic hot water operation. Took combustion readings. Checked for CO around the heat exchanger, unit, and venting. Unit is operating properly at this time."
       ],
-      extras: []
+            extras: [
+        "(Exhaust CO: {exhCO})",
+        "(O2: {o2})",
+        "(CO2: {co2})",
+        "(Stack temp: {stack})"
+      ]
     },
     {
       id: "hpwh",
