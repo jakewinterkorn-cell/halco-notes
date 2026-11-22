@@ -1,5 +1,4 @@
-/* Halco Job Notes — in-app Grok panel.
-   Drop next to app.js and load after it.
+/* Halco Job Notes — live Grok panel at the top, with photo attach.
    Auth: window.HALCO_GROK_PROXY or localStorage["halco-xai-key"]
 */
 (function () {
@@ -10,9 +9,10 @@
   var API = window.HALCO_GROK_PROXY || "https://api.x.ai/v1/chat/completions";
   var SYSTEM =
     window.HALCO_GROK_SYSTEM ||
-    "You are Grok inside Halco Job Notes, a phone app Jacob W uses in the field for Halco Energy job invoice notes. Voice: short field-tech English. No fluff. Do not invent readings, part numbers, or findings. Note format starts with 'Job Invoice Summary - {date}' then '{Last} - {Invoice}', then job type, equipment, body, then 'Thank you,' / 'Jacob W'. If you draft a full note, put it in a markdown fence labeled halco-note.";
+    "You are Grok inside Halco Job Notes, a phone app Jacob W uses in the field for Halco Energy job invoice notes. Voice: short field-tech English. No fluff. Do not invent readings, part numbers, or findings. Read any attached photos (nameplates, Service Titan screens, equipment). Note format starts with 'Job Invoice Summary - {date}' then '{Last} - {Invoice}', then job type, equipment, body, then 'Thank you,' / 'Jacob W'. If you draft a full note, put it in a markdown fence labeled halco-note.";
 
   var history = [];
+  var pendingPhotos = [];
 
   function $(id) {
     return document.getElementById(id);
@@ -36,9 +36,10 @@
     if (sysSel && sysSel.selectedIndex >= 0) {
       sysName = sysSel.options[sysSel.selectedIndex].textContent;
     }
+    var st = window.state || {};
     return {
-      jobType: (window.state && state.jobType) || null,
-      kind: (window.state && state.kind) || "Maintenance",
+      jobType: st.jobType || null,
+      kind: st.kind || "Maintenance",
       date: val("jobDate"),
       lastName: val("lastName"),
       invoice: val("invoice"),
@@ -67,42 +68,75 @@
   function css() {
     var s = document.createElement("style");
     s.textContent =
-      "#grokFab{position:fixed;right:12px;bottom:84px;z-index:40;width:52px;height:52px;border-radius:16px;background:#3d8bfd;color:#fff;font-weight:800;font-size:18px;border:0}" +
-      "#grokSheet{position:fixed;left:0;right:0;bottom:0;top:18%;z-index:60;background:#152033;border-top:1px solid #334155;display:none;flex-direction:column;padding:12px 12px calc(12px + env(safe-area-inset-bottom))}" +
-      "#grokSheet.on{display:flex}" +
-      "#grokHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}" +
-      "#grokLog{flex:1;overflow:auto;background:#0f1620;border:1px solid #334155;border-radius:12px;padding:10px;white-space:pre-wrap;font-size:14px}" +
-      "#grokRow{display:flex;gap:8px;margin-top:8px}" +
+      "#grokTop{background:#1c2533;border:1px solid #334155;border-radius:16px;padding:12px;margin:0 0 14px}" +
+      "#grokTopHead{display:flex;justify-content:space-between;align-items:center;gap:8px}" +
+      "#grokTopHead strong{font-size:16px}" +
+      "#grokBody{display:none;margin-top:10px}" +
+      "#grokTop.on #grokBody{display:block}" +
+      "#grokLog{max-height:220px;overflow:auto;background:#0f1620;border:1px solid #334155;border-radius:12px;padding:10px;white-space:pre-wrap;font-size:14px}" +
+      "#grokPhotos{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}" +
+      "#grokPhotos img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #334155}" +
+      "#grokRow{display:flex;gap:8px;margin-top:8px;align-items:flex-end}" +
       "#grokIn{flex:1;min-height:48px;border-radius:12px;border:1px solid #334155;background:#0f1620;color:#e8eef6;padding:12px;font:inherit}" +
-      "#grokSheet button{appearance:none;border:0;border-radius:12px;padding:12px;min-height:48px;background:#3d8bfd;color:#fff;font-weight:700}" +
-      "#grokSheet button.ghost{background:#243044;color:#e8eef6;border:1px solid #334155}" +
-      "#grokApply{display:none;margin-top:8px;background:#1f8a55}";
+      "#grokTop button{appearance:none;border:0;border-radius:12px;padding:12px;min-height:48px;background:#3d8bfd;color:#fff;font-weight:700}" +
+      "#grokTop button.ghost{background:#243044;color:#e8eef6;border:1px solid #334155}" +
+      "#grokApply{display:none;margin-top:8px;background:#1f8a55;width:100%}";
     document.head.appendChild(s);
   }
 
+  function drawPhotos() {
+    var box = $("grokPhotos");
+    if (!box) return;
+    box.innerHTML = "";
+    pendingPhotos.forEach(function (p, i) {
+      var img = document.createElement("img");
+      img.src = p.data;
+      img.title = "Tap to remove";
+      img.onclick = function () {
+        pendingPhotos.splice(i, 1);
+        drawPhotos();
+      };
+      box.appendChild(img);
+    });
+  }
+
+  function addPhotos(files) {
+    [].slice.call(files || []).forEach(function (file) {
+      if (!file.type || file.type.indexOf("image/") !== 0) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        pendingPhotos.push({ name: file.name, data: reader.result });
+        drawPhotos();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function ui() {
-    var fab = document.createElement("button");
-    fab.id = "grokFab";
-    fab.type = "button";
-    fab.textContent = "G";
-    fab.title = "Grok";
-    var sheet = document.createElement("div");
-    sheet.id = "grokSheet";
-    sheet.innerHTML =
-      '<div id="grokHead"><strong>Grok</strong><span>' +
-      '<button class="ghost" type="button" id="grokKeyBtn">Key</button> ' +
-      '<button class="ghost" type="button" id="grokClose">Close</button></span></div>' +
-      '<div id="grokLog">Ask Grok to draft or clean up this job note.</div>' +
+    var main = document.querySelector("main");
+    if (!main) return;
+    var panel = document.createElement("div");
+    panel.id = "grokTop";
+    panel.innerHTML =
+      '<div id="grokTopHead"><strong>Live bot</strong>' +
+      '<span><button class="ghost" type="button" id="grokKeyBtn">Key</button> ' +
+      '<button class="ghost" type="button" id="grokToggle">Open</button></span></div>' +
+      '<div id="grokBody">' +
+      '<div id="grokLog">Add photos or type what to draft. Key is stored only on this phone.</div>' +
+      '<div id="grokPhotos"></div>' +
       '<button type="button" id="grokApply">Apply to notes</button>' +
-      '<div id="grokRow"><textarea id="grokIn" placeholder="Tell Grok what to write…"></textarea>' +
-      '<button type="button" id="grokSend">Send</button></div>';
-    document.body.appendChild(fab);
-    document.body.appendChild(sheet);
-    fab.onclick = function () {
-      sheet.classList.add("on");
-    };
-    $("grokClose").onclick = function () {
-      sheet.classList.remove("on");
+      '<div id="grokRow">' +
+      '<input id="grokPhotoIn" type="file" accept="image/*" multiple hidden />' +
+      '<button class="ghost" type="button" id="grokPhotoBtn">Photo</button>' +
+      '<textarea id="grokIn" placeholder="Ask the bot\u2026"></textarea>' +
+      '<button type="button" id="grokSend">Send</button></div></div>';
+    var tabs = main.querySelector(".tabs");
+    if (tabs) main.insertBefore(panel, tabs);
+    else main.insertBefore(panel, main.firstChild);
+
+    $("grokToggle").onclick = function () {
+      var on = panel.classList.toggle("on");
+      this.textContent = on ? "Close" : "Open";
     };
     $("grokKeyBtn").onclick = function () {
       var next = prompt("xAI API key for this phone (stored only on device)", key() || "");
@@ -110,6 +144,13 @@
       if (next.trim()) localStorage.setItem("halco-xai-key", next.trim());
       else localStorage.removeItem("halco-xai-key");
       toast("Key saved on device");
+    };
+    $("grokPhotoBtn").onclick = function () {
+      $("grokPhotoIn").click();
+    };
+    $("grokPhotoIn").onchange = function (e) {
+      addPhotos(e.target.files);
+      e.target.value = "";
     };
     $("grokSend").onclick = send;
     $("grokIn").addEventListener("keydown", function (e) {
@@ -133,30 +174,39 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  function userContent(text, photos) {
+    if (!photos.length) return text;
+    var parts = [];
+    if (text) parts.push({ type: "text", text: text });
+    else parts.push({ type: "text", text: "Read these photos and draft the Halco job note." });
+    photos.forEach(function (p) {
+      parts.push({ type: "image_url", image_url: { url: p.data } });
+    });
+    return parts;
+  }
+
   async function send() {
     var input = $("grokIn");
     var text = input.value.trim();
-    if (!text) return;
+    if (!text && !pendingPhotos.length) return;
     if (!window.HALCO_GROK_PROXY && !key()) {
       $("grokKeyBtn").click();
       if (!key()) return;
     }
     input.value = "";
-    appendLog("You", text);
+    var photos = pendingPhotos.slice();
+    pendingPhotos = [];
+    drawPhotos();
+    appendLog("You", (text || "(photos only)") + (photos.length ? " [" + photos.length + " photo]" : ""));
     var snap = snapshot();
-    history.push({ role: "user", content: text });
+    history.push({ role: "user", content: userContent(text, photos) });
     var messages = [
       { role: "system", content: SYSTEM },
-      {
-        role: "system",
-        content: "Current job snapshot:\n" + JSON.stringify(snap, null, 2)
-      }
+      { role: "system", content: "Current job snapshot:\n" + JSON.stringify(snap, null, 2) }
     ].concat(history);
 
     var headers = { "Content-Type": "application/json" };
-    if (!window.HALCO_GROK_PROXY && key()) {
-      headers.Authorization = "Bearer " + key();
-    }
+    if (!window.HALCO_GROK_PROXY && key()) headers.Authorization = "Bearer " + key();
 
     var apply = $("grokApply");
     apply.style.display = "none";
@@ -182,7 +232,7 @@
         apply.style.display = "block";
       }
     } catch (err) {
-      appendLog("Error", String(err.message || err) + "\nIf this is CORS, use a proxy (window.HALCO_GROK_PROXY).");
+      appendLog("Error", String(err.message || err) + "\nIf this is CORS, the phone browser blocked api.x.ai. A proxy is required.");
     }
   }
 
