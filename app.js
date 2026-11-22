@@ -12,7 +12,7 @@ function saveLib(){localStorage.setItem("halco-lib",JSON.stringify(state.lib));}
 function currentSystem(){return state.lib.systems.find(function(s){return s.id===document.getElementById("systemSel").value;})||state.lib.systems[0];}
 function fillMap(){const map={};document.querySelectorAll("[data-fill]").forEach(function(el){map[el.dataset.fill]=el.value.trim();});return map;}
 function applyFills(text,map){var out=text;Object.entries(map).forEach(function(kv){out=out.replaceAll("{"+kv[0]+"}",kv[1]||"");});var hsi=map.hsi?(" Tested hot surface igniter - "+map.hsi+" ohms (within range)."):"";var cap=map.cap?(" Tested capacitor - "+map.cap+"."):"";out=out.replaceAll("{hsiLine}",hsi).replaceAll("{capLine}",cap);out=out.replace(/\{[a-zA-Z0-9]+\}/g,"");out=out.replace(/Inspected and replaced\s*\.?/i,"Inspected air filter.");out=out.replace(/\s{2,}/g," ").replace(/ \./g,".");return out.trim();}
-function keepExtra(line){if(!line)return false;if(/:\s*$/.test(line))return false;if(/:\s*\)/.test(line))return false;if(/,\s*,/.test(line))return false;if(/CO\s*,/.test(line)&&/O2\s*,/.test(line))return false;return true;}
+function keepExtra(line){if(!line)return false;if(/:\s*$/.test(line))return false;if(/:\s*\)/.test(line))return false;if(/\{\w+\}/.test(line))return false;if(/,\s*,/.test(line))return false;if(/CO\s*,\s*O2\s*,/.test(line))return false;return true;}
 function formatDate(iso){if(!iso)return"";var p=iso.split("-");return new Date(Number(p[0]),Number(p[1])-1,Number(p[2])).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});}
 function addField(box,id,label,isArea){var lab=document.createElement("label");lab.textContent=label;var el=document.createElement(isArea?"textarea":"input");el.id=id;box.appendChild(lab);box.appendChild(el);}
 function renderFills(){var box=$("fillFields");box.innerHTML="";if(state.jobType==="service"){addField(box,"svcFor","Service call for");addField(box,"svcFindings","Findings",true);addField(box,"svcRecs","Recommendations",true);addField(box,"svcFix","Solution / Fix",true);return;}var sys=currentSystem();(sys.fills||[]).forEach(function(f){var lab=document.createElement("label");lab.textContent=f.label+"  (leave blank to omit)";var inp=document.createElement("input");inp.dataset.fill=f.key;inp.value="";box.appendChild(lab);box.appendChild(inp);});}
@@ -30,6 +30,26 @@ function sendStockEmail(){updateStockHeader();var items=stockItems();if(!items.l
 function sendJobEmail(){var extra=val("extraNotes");if(!extra){alert("Extra job information is empty.");return;}location.href="mailto:?subject="+encodeURIComponent(jobTag())+"&body="+encodeURIComponent(extra);}
 function notesNow(){var t=getPreview().trim();if(!t||t.indexOf("Pick a type")===0)return buildNotes();return t;}
 function onTap(el,fn){if(!el)return;el.addEventListener("click",fn);}
+function normalizeFills(fills){
+  var out={};
+  if(!fills||typeof fills!=="object")return out;
+  var alias={co:"exhCO",exhaustco:"exhCO",exhaust_co:"exhCO",exhaust:"exhCO",supplyco:"supplyCO",supply_co:"supplyCO",stacktemp:"stack",stack_temp:"stack"};
+  Object.keys(fills).forEach(function(k){
+    if(fills[k]==null||String(fills[k]).trim()==="")return;
+    var nk=alias[String(k).toLowerCase()]||k;
+    out[nk]=String(fills[k]).trim();
+  });
+  return out;
+}
+function combustionLine(f){
+  var bits=[];
+  if(f.exhCO)bits.push("CO "+f.exhCO);
+  if(f.supplyCO)bits.push("Supply CO "+f.supplyCO);
+  if(f.o2)bits.push("O2 "+f.o2);
+  if(f.co2)bits.push("CO2 "+f.co2);
+  if(f.stack)bits.push("stack "+f.stack);
+  return bits.length?"(Exhaust combustion: "+bits.join(", ")+")":"";
+}
 function applyFromBot(fields){
   if(!fields||typeof fields!=="object")return;
   if(fields.jobType==="service"||fields.jobType==="maintenance"){
@@ -50,10 +70,24 @@ function applyFromBot(fields){
   ["jobDate","lastName","invoice","equipment","extraNotes","svcFor","svcFindings","svcRecs","svcFix"].forEach(function(id){
     if(fields[id]!=null&&$(id))$(id).value=String(fields[id]);
   });
-  if(fields.fills&&typeof fields.fills==="object"){
+  var norm=normalizeFills(fields.fills);
+  var applied={};
+  if(Object.keys(norm).length){
     document.querySelectorAll("[data-fill]").forEach(function(el){
-      if(fields.fills[el.dataset.fill]!=null)el.value=String(fields.fills[el.dataset.fill]);
+      if(norm[el.dataset.fill]!=null){el.value=norm[el.dataset.fill];applied[el.dataset.fill]=true;}
     });
+  }
+  var leftover={};
+  ["exhCO","supplyCO","o2","co2","stack"].forEach(function(k){if(norm[k]&&!applied[k])leftover[k]=norm[k];});
+  var line=combustionLine(leftover);
+  if(line){
+    if(state.jobType==="service"&&$("svcFindings")){
+      var cur=val("svcFindings");
+      if(cur.indexOf(line)===-1)$("svcFindings").value=cur?cur+"\n"+line:line;
+    }else if($("extraNotes")){
+      var extra=val("extraNotes");
+      if(extra.indexOf(line)===-1)$("extraNotes").value=extra?extra+"\n"+line:line;
+    }
   }
   if(Array.isArray(fields.stock)&&fields.stock.length){
     showTab("job");
